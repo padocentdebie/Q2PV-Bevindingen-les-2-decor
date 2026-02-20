@@ -3,50 +3,42 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PD-Simulatie | Casus 5 Amsterdam</title>
+    <title>PD-Simulatie | Casus 5 Dapperstraat</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         :root { --police-blue: #003366; --gold: #FFD700; }
         body { font-family: 'Segoe UI', sans-serif; height: 100vh; display: flex; flex-direction: column; overflow: hidden; background: #f4f7f9; }
-        
-        .unit-view-locked { filter: grayscale(1) brightness(0.6); transition: filter 1.5s ease; }
-
-        #foto-container { position: relative; background-size: cover; background-position: center; flex-grow: 1; background-color: #222; }
-        #canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
-        
-        .spoor-item { 
-            position: absolute; 
-            transform: translate(-50%, -50%); 
-            z-index: 10; 
-            touch-action: none; 
-            border: 2px solid white;
-            background: rgba(0,0,0,0.8);
-            color: white;
-            padding: 5px 10px;
-            font-size: 11px;
-            font-weight: bold;
-            white-space: nowrap;
-            cursor: move;
-        }
-        
-        .melding-unit { border-left: 5px solid var(--police-blue); background: white; padding: 12px; margin-bottom: 8px; border-radius: 2px; font-size: 13px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        .melding-fb { border-left: 5px solid var(--gold); background: #fffde7; padding: 12px; margin-bottom: 8px; border-radius: 2px; font-size: 13px; font-weight: bold; }
-        
-        .btn-main { background: var(--police-blue); color: white; padding: 12px; width: 100%; font-weight: bold; text-transform: uppercase; border: none; cursor: pointer; }
+        .unit-view-locked { filter: grayscale(1) brightness(0.4) contrast(1.2); transition: all 1.5s ease; }
+        .unit-view-active { filter: grayscale(0) brightness(1) contrast(1); transition: all 1.5s ease; }
+        #foto-container { position: relative; background-size: cover; background-position: center; flex-grow: 1; background-color: #000; }
+        #canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+        #canvas .spoor-item { pointer-events: auto; }
+        .spoor-item { position: absolute; transform: translate(-50%, -50%); z-index: 10; border: 2px solid white; background: rgba(0,0,0,0.9); color: #fff; padding: 4px 10px; font-size: 10px; font-weight: 800; white-space: nowrap; cursor: move; }
+        .melding-unit { border-left: 5px solid var(--police-blue); background: white; padding: 12px; margin-bottom: 8px; font-size: 13px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .melding-fb { border-left: 5px solid var(--gold); background: #fffde7; padding: 10px; margin-bottom: 8px; font-size: 12px; font-weight: bold; border-radius: 4px; }
+        .btn-main { background: var(--police-blue); color: white; padding: 12px; width: 100%; font-weight: bold; text-transform: uppercase; cursor: pointer; border-radius: 4px; }
+        .btn-oc-action { background: #e2e8f0; color: #1e293b; padding: 4px 8px; font-size: 9px; font-weight: 800; border-radius: 3px; border: 1px solid #cbd5e1; }
     </style>
 </head>
-<body class="m-0">
+<body class="m-0 text-slate-900">
 
     <div id="page-login" class="fixed inset-0 bg-[#001a33] z-50 flex items-center justify-center p-4">
-        <div class="bg-white p-8 rounded shadow-2xl w-full max-w-xl border-t-8 border-blue-900">
-            <h1 class="text-2xl font-black text-blue-900 mb-4 uppercase italic">Casus 5: Decor-oefening</h1>
-            <div class="bg-yellow-50 border-l-4 border-yellow-500 p-3 mb-4 text-xs italic">
-                <strong>Locatie:</strong> Petstraat, Amsterdam.
+        <div class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-lg border-t-8 border-blue-900 text-center">
+            <h1 class="text-3xl font-black text-blue-900 mb-2 italic">CASUS 5</h1>
+            <p class="text-sm font-bold uppercase tracking-widest text-slate-500 mb-8">Dapperstraat, Amsterdam</p>
+            <input type="text" id="userName" placeholder="Naam / Roepnummer" class="w-full p-4 border-2 border-slate-200 rounded-lg mb-4 outline-none focus:border-blue-900 text-center text-xl font-bold">
+            
+            <div id="location-select" class="mb-6">
+                <p class="text-[10px] font-black uppercase mb-2">Kies uw startpositie:</p>
+                <div class="flex gap-2 justify-center">
+                    <button onclick="setLoc('ETOS')" id="btn-etos" class="px-4 py-2 border-2 border-slate-200 rounded font-bold text-sm hover:bg-slate-50">Ter hoogte van Etos</button>
+                    <button onclick="setLoc('MCD')" id="btn-mcd" class="px-4 py-2 border-2 border-slate-200 rounded font-bold text-sm hover:bg-slate-50">Ter hoogte van McDonalds</button>
+                </div>
             </div>
-            <input type="text" id="userName" placeholder="Naam / Roepnummer" class="w-full p-4 border border-gray-300 mb-4 outline-none focus:border-blue-900 text-lg">
-            <div class="flex gap-4">
-                <button onclick="startApp('UNIT')" class="btn-main">Start Eenheid</button>
-                <button onclick="startApp('OC')" class="btn-main !bg-gray-700">Start OC (Regie)</button>
+
+            <div class="grid grid-cols-2 gap-4">
+                <button onclick="startApp('UNIT')" class="btn-main shadow-lg">Start Eenheid</button>
+                <button onclick="startApp('OC')" class="btn-main !bg-slate-700 shadow-lg">Start OC (Regie)</button>
             </div>
         </div>
     </div>
@@ -54,24 +46,23 @@
     <div id="page-sim" class="hidden grid grid-cols-1 lg:grid-cols-[1fr_420px] h-screen">
         <div id="foto-container" class="unit-view-locked">
             <div id="canvas"></div>
+            <div id="status-label" class="absolute top-4 left-4 bg-black/70 text-white text-[10px] px-3 py-1.5 uppercase tracking-tighter font-black rounded border border-white/20">Fase: Kaal Decor</div>
         </div>
 
-        <div class="bg-white border-l border-gray-300 flex flex-col h-full overflow-hidden">
-            <div id="oc-panel" class="hidden p-4 bg-gray-100 border-b-2 border-gray-300 text-[10px]">
-                <strong class="text-blue-900 uppercase">Regie Dashboard | Petstraat</strong>
-                <div class="flex gap-4 my-2">
-                    <label><input type="checkbox" class="oc-chk" data-label="Teg. Tijd"> Kaal: Tegenwoordig</label>
-                    <label><input type="checkbox" class="oc-chk" data-label="Verl. Tijd"> Veranderlijk: Verleden</label>
+        <div class="bg-white border-l border-slate-200 flex flex-col h-full overflow-hidden shadow-2xl">
+            <div id="oc-panel" class="hidden p-4 bg-slate-100 border-b border-slate-300">
+                <div class="flex justify-between items-center mb-3 text-[10px] font-black uppercase text-slate-500">
+                    <span>Regie Dashboard</span>
+                    <button onclick="resetSim()" class="text-red-600 hover:underline">Reset Alles</button>
                 </div>
-                <div id="sporen-beheer" class="grid grid-cols-2 gap-1 mb-2"></div>
-                <button onclick="resetSim()" class="text-red-600 underline uppercase font-bold">Reset Sessie</button>
+                <div id="sporen-beheer" class="grid grid-cols-2 gap-1.5"></div>
             </div>
 
-            <div id="livefeed" class="flex-grow p-4 overflow-y-auto bg-gray-50 space-y-2"></div>
+            <div id="livefeed" class="flex-grow p-4 overflow-y-auto bg-slate-50 space-y-3 flex flex-col-reverse"></div>
 
-            <div class="p-4 border-t border-gray-300 bg-white">
-                <textarea id="msgInput" rows="3" class="w-full p-3 border border-gray-300 rounded text-sm outline-none mb-2 focus:border-blue-900 shadow-inner" placeholder="Beschrijf conform protocol..."></textarea>
-                <button onclick="verstuurMelding()" class="btn-main">Verstuur naar livefeed</button>
+            <div class="p-4 border-t border-slate-200 bg-white">
+                <textarea id="msgInput" rows="3" class="w-full p-3 border-2 border-slate-100 rounded-lg text-sm outline-none mb-2 focus:border-blue-900" placeholder="Beschrijf conform protocol..."></textarea>
+                <button onclick="verstuurMelding()" class="btn-main">Verstuur naar Feed</button>
             </div>
         </div>
     </div>
@@ -89,32 +80,32 @@
     
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
-    let myName, myRole;
+    let myName, myRole, myLoc = 'ETOS';
 
-    const sporenDef = [
-        { id: 'rem', name: 'SPOOR: REMSLEEP' },
-        { id: 'bloed', name: 'SPOOR: BLOED' },
-        { id: 'glas', name: 'SPOOR: GLAS' },
-        { id: 'auto', name: 'OBJECT: VW GOLF' }
-    ];
+    const photos = { 'ETOS': 'casus5positiedapperstraat.png', 'MCD': 'casus5positiedapperstraathoogtemcdonalds.png' };
+    const sporenDef = [ {id:'rem', name:'SPOOR: REMSLEEP'}, {id:'bloed', name:'SPOOR: BLOED'}, {id:'glas', name:'SPOOR: GLASFRAGMENTEN'}, {id:'auto', name:'OBJECT: VW GOLF (ZW)'} ];
+
+    window.setLoc = (l) => {
+        myLoc = l;
+        document.querySelectorAll('#location-select button').forEach(b => b.classList.remove('bg-blue-900', 'text-white', 'border-blue-900'));
+        document.getElementById('btn-' + l.toLowerCase()).classList.add('bg-blue-900', 'text-white', 'border-blue-900');
+    };
 
     window.startApp = (role) => {
         const n = document.getElementById('userName').value.trim();
-        if(!n) return alert("Naam verplicht.");
+        if(!n) return alert("Voer naam in.");
         myName = n; myRole = role;
-        
         document.getElementById('page-login').classList.add('hidden');
         document.getElementById('page-sim').classList.remove('hidden');
-        document.getElementById('foto-container').style.backgroundImage = "url('casus5terplaatse.png')";
+        document.getElementById('foto-container').style.backgroundImage = `url('${photos[myLoc]}')`;
 
         if(role === 'OC') {
             document.getElementById('oc-panel').classList.remove('hidden');
-            document.getElementById('foto-container').classList.remove('unit-view-locked');
+            document.getElementById('foto-container').classList.replace('unit-view-locked', 'unit-view-active');
             const div = document.getElementById('sporen-beheer');
             sporenDef.forEach(s => {
                 const b = document.createElement('button');
-                b.innerText = s.name.replace('SPOOR: ', '').replace('OBJECT: ', '');
-                b.className = 'bg-white border border-gray-400 p-1 font-bold hover:bg-gray-200 uppercase';
+                b.innerText = s.name.split(': ')[1]; b.className = 'bg-white border border-slate-300 p-2 text-[9px] font-black uppercase';
                 b.onclick = () => set(ref(db, 'sporen/' + s.id), { x: 50, y: 50, r: 0 });
                 div.appendChild(b);
             });
@@ -125,13 +116,8 @@
     window.verstuurMelding = () => {
         const input = document.getElementById('msgInput');
         if(!input.value.trim()) return;
-        push(ref(db, 'feed'), { sender: myName, msg: input.value.trim(), role: 'UNIT' });
+        push(ref(db, 'feed'), { sender: myName, msg: input.value.trim(), role: 'UNIT', loc: myLoc });
         input.value = '';
-    };
-
-    window.stuurFeedback = (target) => {
-        const vinks = Array.from(document.querySelectorAll('.oc-chk')).map(c => (c.checked ? "✅" : "❌") + " " + c.getAttribute('data-label')).join(" | ");
-        push(ref(db, 'feed'), { sender: "OC", target: target, msg: "PROTOCOL: " + vinks, role: 'FB' });
     };
 
     function startListeners() {
@@ -142,35 +128,36 @@
                 if(myRole === 'OC' || m.sender === myName || m.target === myName) {
                     const div = document.createElement('div');
                     div.className = m.role === 'UNIT' ? 'melding-unit' : 'melding-fb';
-                    div.innerHTML = `<div class="text-[10px] font-black text-blue-900 uppercase">${m.sender}</div>${m.msg}`;
+                    const locTag = m.loc ? `<span class="text-blue-500 ml-2">[LOCATIE: ${m.loc}]</span>` : '';
+                    div.innerHTML = `<div class="text-[9px] font-black text-blue-900 mb-1 uppercase">${m.sender} ${locTag}</div>${m.msg}`;
                     if(myRole === 'OC' && m.role === 'UNIT') {
-                        const bBox = document.createElement('div'); bBox.className = "flex gap-2 mt-2";
-                        bBox.innerHTML = `
-                            <button onclick="stuurFeedback('${m.sender}')" class="bg-yellow-500 text-black text-[9px] px-2 py-1 font-bold rounded">CHECK</button>
-                            <button onclick="set(ref(db, 'vrijgave/${m.sender}'), true)" class="bg-green-600 text-white text-[9px] px-2 py-1 font-bold rounded uppercase">Vrijgeven</button>`;
+                        const bBox = document.createElement('div'); bBox.className = "flex gap-2 mt-2 pt-2 border-t border-slate-100";
+                        bBox.innerHTML = `<button onclick="push(ref(db, 'feed'), {sender:'OC', target:'${m.sender}', msg:'CHECK OK', role:'FB'})" class="btn-oc-action">CHECK</button><button onclick="set(ref(db, 'vrijgave/${m.sender}'), true)" class="btn-oc-action bg-green-600 text-white uppercase">Vrijgeven</button>`;
                         div.appendChild(bBox);
                     }
-                    feed.prepend(div);
+                    feed.appendChild(div);
                 }
             });
         });
 
         onValue(ref(db, 'vrijgave/' + myName), (snap) => {
-            if(snap.val()) document.getElementById('foto-container').classList.remove('unit-view-locked');
+            if(snap.val()) {
+                document.getElementById('foto-container').classList.replace('unit-view-locked', 'unit-view-active');
+                document.getElementById('status-label').innerText = "Status: Veranderlijk Decor (Vrijgegeven)";
+                document.getElementById('status-label').classList.add('!bg-green-700');
+            }
         });
 
         onValue(ref(db, 'sporen'), (snap) => {
             const data = snap.val() || {};
             document.querySelectorAll('.spoor-item').forEach(e => e.remove());
             Object.keys(data).forEach(id => {
-                const pos = data[id];
-                const sDef = sporenDef.find(x => x.id === id);
+                const pos = data[id]; const sDef = sporenDef.find(x => x.id === id);
                 if(pos && sDef) {
                     const div = document.createElement('div'); div.className = 'spoor-item';
                     div.style.left = pos.x + '%'; div.style.top = pos.y + '%';
                     div.style.transform = `translate(-50%, -50%) rotate(${pos.r}deg)`;
-                    div.innerText = sDef.name;
-                    document.getElementById('canvas').appendChild(div);
+                    div.innerText = sDef.name; document.getElementById('canvas').appendChild(div);
                     if(myRole === 'OC') setupInteractie(div, id, pos.r);
                 }
             });
@@ -190,7 +177,8 @@
         div.oncontextmenu = (e) => { e.preventDefault(); update(ref(db, 'sporen/' + id), { r: (r + 45) % 360 }); };
     }
 
-    window.resetSim = () => { if(confirm("Volledige reset van alle data?")) { remove(ref(db, 'sporen')); remove(ref(db, 'feed')); remove(ref(db, 'vrijgave')); location.reload(); }};
+    window.resetSim = () => { if(confirm("Data wissen?")) { remove(ref(db, 'sporen')); remove(ref(db, 'feed')); remove(ref(db, 'vrijgave')); location.reload(); }};
+    setLoc('ETOS'); // Default
 </script>
 </body>
 </html>
