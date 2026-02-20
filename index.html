@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PD-Simulatie | Casus 5: Amsterdam</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root { --police-blue: #003366; --gold: #FFD700; }
+        body { font-family: 'Segoe UI', sans-serif; height: 100vh; display: flex; flex-direction: column; overflow: hidden; background: #f4f7f9; }
+        
+        /* De 'Kaal Decor' modus: wel zicht, geen kleur/detail */
+        .unit-view-locked { 
+            filter: grayscale(1) contrast(1.2) brightness(0.8); 
+            transition: filter 1.5s ease-in-out;
+        }
+
+        #foto-container { position: relative; background-size: cover; background-position: center; flex-grow: 1; background-color: #000; }
+        #canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+        
+        .spoor-item { position: absolute; transform: translate(-50%, -50%); z-index: 10; touch-action: none; }
+        .spoor-label { background: rgba(0,0,0,0.8); color:#fff; font-size:10px; padding:2px 6px; border-radius: 2px; margin-top: 5px; text-align: center; }
+        
+        /* Meldingen styling */
+        .melding-unit { border-left: 5px solid var(--police-blue); background: white; padding: 10px; margin-bottom: 8px; border-radius: 4px; font-size: 13px; }
+        .melding-fb { border-left: 5px solid var(--gold); background: #fffde7; padding: 10px; margin-bottom: 8px; border-radius: 4px; font-size: 13px; font-weight: bold; }
+        
+        .btn-main { background: var(--police-blue); color: white; padding: 12px; width: 100%; font-weight: bold; text-transform: uppercase; border: none; cursor: pointer; border-radius: 4px; }
+        .btn-oc { background: #444; }
+    </style>
+</head>
+<body class="m-0">
+
+    <div id="page-login" class="fixed inset-0 bg-[#001a33] z-50 flex items-center justify-center p-4">
+        <div class="bg-white p-8 rounded shadow-2xl w-full max-w-2xl border-t-8 border-blue-900">
+            <h1 class="text-2xl font-black text-blue-900 mb-4 uppercase italic">Casus 5: Decor-oefening</h1>
+            <div class="bg-yellow-50 border-l-4 border-yellow-500 p-4 mb-6 italic text-sm">
+                <strong>Briefing:</strong> "Eerste van Swindenstraat, Amsterdam. Voetganger aangereden op de VOP. Start de decor-beschrijving."
+            </div>
+            <div class="grid grid-cols-2 gap-4 text-xs mb-6">
+                <div class="bg-slate-100 p-3 rounded">
+                    <strong class="block mb-1 text-blue-900 uppercase">1. Kaal Decor</strong>
+                    Beschrijf de vaste omgeving in de <strong>tegenwoordige tijd</strong> terwijl het beeld nog grijs is.
+                </div>
+                <div class="bg-slate-100 p-3 rounded">
+                    <strong class="block mb-1 text-blue-900 uppercase">2. Veranderlijk Decor</strong>
+                    Zodra de kleur terug is, beschrijf je de sporen in de <strong>verleden tijd</strong>.
+                </div>
+            </div>
+            <input type="text" id="userName" placeholder="Voornaam / Roepnummer" class="w-full p-4 border border-gray-300 rounded mb-4 outline-none focus:border-blue-900">
+            <div class="flex gap-4">
+                <button onclick="startApp('UNIT')" class="btn-main">Start als Eenheid</button>
+                <button onclick="startApp('OC')" class="btn-main btn-oc">Start als OC</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="page-sim" class="hidden grid grid-cols-1 lg:grid-cols-[1fr_400px] h-screen">
+        
+        <div id="foto-container" class="unit-view-locked">
+            <div id="canvas"></div>
+            <div id="oc-hint" class="hidden absolute bottom-4 left-4 bg-white/90 p-3 rounded text-[10px] font-bold uppercase shadow-lg">
+                <span class="text-blue-900">OC-MODUS:</span> Versleep sporen | Scroll = Schalen | Rechtsklik = Draaien
+            </div>
+        </div>
+
+        <div class="bg-white border-l border-gray-200 flex flex-col h-full overflow-hidden">
+            
+            <div id="oc-panel" class="hidden p-4 bg-gray-100 border-b-2 border-gray-300">
+                <h3 class="text-[10px] font-black text-blue-900 uppercase mb-2">Regie Dashboard</h3>
+                <div class="grid grid-cols-1 gap-1 mb-3">
+                    <label class="text-[10px] flex items-center gap-2"><input type="checkbox" class="oc-chk" data-label="Tegenwoordige tijd"> Kaal: Tegenwoordig</label>
+                    <label class="text-[10px] flex items-center gap-2"><input type="checkbox" class="oc-chk" data-label="Verleden tijd"> Veranderlijk: Verleden</label>
+                </div>
+                <div id="sporen-beheer" class="grid grid-cols-2 gap-1 mb-3"></div>
+                <button onclick="resetSim()" class="text-[9px] text-red-600 underline uppercase font-bold">Volledige Reset</button>
+            </div>
+
+            <div id="livefeed" class="flex-grow p-4 overflow-y-auto bg-gray-50 space-y-2"></div>
+
+            <div class="p-4 border-t border-gray-200">
+                <textarea id="msgInput" rows="3" class="w-full p-3 border border-gray-300 rounded text-sm outline-none mb-2" placeholder="Beschrijf conform protocol..."></textarea>
+                <button onclick="verstuurMelding()" class="btn-main">Verstuur Melding</button>
+            </div>
+        </div>
+    </div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.1.0/firebase-app.js";
+    import { getDatabase, ref, onValue, set, push, update, remove } from "https://www.gstatic.com/firebasejs/9.1.0/firebase-database.js";
+
+    const firebaseConfig = { 
+        apiKey: "AIzaSyB12mTMBnuxdC4W4htyFO_C7Dnh3maVKew", 
+        authDomain: "decoroefening.firebaseapp.com", 
+        databaseURL: "https://decoroefening-default-rtdb.europe-west1.firebasedatabase.app", 
+        projectId: "decoroefening" 
+    };
+    
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    let myName, myRole;
+
+    const sporenDef = [
+        { id: 'rem', name: 'Remsleep', img: 'https://cdn-icons-png.flaticon.com/512/2555/2555572.png', s: 120 },
+        { id: 'bloed', name: 'Bloedspoor', img: 'https://cdn-icons-png.flaticon.com/512/1188/1188447.png', s: 60 },
+        { id: 'glas', name: 'Glasfragmenten', img: 'https://cdn-icons-png.flaticon.com/512/5024/5024467.png', s: 50 },
+        { id: 'auto', name: 'Zwarte Golf', img: 'https://cdn-icons-png.flaticon.com/512/741/741407.png', s: 110 }
+    ];
+
+    window.startApp = (role) => {
+        const n = document.getElementById('userName').value.trim();
+        if(!n) return alert("Vul je naam in.");
+        myName = n; myRole = role;
+        
+        document.getElementById('page-login').classList.add('hidden');
+        document.getElementById('page-sim').classList.remove('hidden');
+        
+        // Gebruik de foto uit jouw casus
+        document.getElementById('foto-container').style.backgroundImage = "url('casus5terplaatse.png')";
+
+        if(role === 'OC') {
+            document.getElementById('oc-panel').classList.remove('hidden');
+            document.getElementById('oc-hint').classList.remove('hidden');
+            document.getElementById('foto-container').classList.remove('unit-view-locked');
+            
+            const div = document.getElementById('sporen-beheer');
+            sporenDef.forEach(s => {
+                const b = document.createElement('button');
+                b.innerText = s.name;
+                b.className = 'bg-white border border-gray-300 text-[9px] p-1 font-bold hover:bg-blue-50 uppercase';
+                b.onclick = () => set(ref(db, 'sporen/' + s.id), { x: 50, y: 50, r: 0, s: s.s });
+                div.appendChild(b);
+            });
+        }
+        startListeners();
+    };
+
+    window.verstuurMelding = () => {
+        const input = document.getElementById('msgInput');
+        if(!input.value.trim()) return;
+        push(ref(db, 'feed'), { sender: myName, msg: input.value.trim(), role: 'UNIT' });
+        input.value = '';
+    };
+
+    window.stuurFeedback = (target) => {
+        const vinks = Array.from(document.querySelectorAll('.oc-chk')).map(c => (c.checked ? "✅" : "❌") + " " + c.getAttribute('data-label')).join(" | ");
+        push(ref(db, 'feed'), { sender: "OC", target: target, msg: "BEOORDELING: " + vinks, role: 'FB' });
+    };
+
+    function startListeners() {
+        onValue(ref(db, 'feed'), (snap) => {
+            const feed = document.getElementById('livefeed'); feed.innerHTML = '';
+            snap.forEach(c => {
+                const m = c.val();
+                if(myRole === 'OC' || m.sender === myName || m.target === myName) {
+                    const div = document.createElement('div');
+                    div.className = m.role === 'UNIT' ? 'melding-unit shadow-sm' : 'melding-fb';
+                    div.innerHTML = `<div class="font-black text-[10px] text-blue-900 mb-1 uppercase">${m.sender}</div>${m.msg}`;
+                    if(myRole === 'OC' && m.role === 'UNIT') {
+                        const btnBox = document.createElement('div'); btnBox.className = "flex gap-2 mt-2";
+                        btnBox.innerHTML = `
+                            <button onclick="stuurFeedback('${m.sender}')" class="bg-yellow-500 text-white text-[9px] px-2 py-1 font-bold rounded">FEEDBACK</button>
+                            <button onclick="set(ref(db, 'vrijgave/${m.sender}'), true)" class="bg-green-600 text-white text-[9px] px-2 py-1 font-bold rounded">VRIJGEVEN (KLEUR)</button>`;
+                        div.appendChild(btnBox);
+                    }
+                    feed.prepend(div);
+                }
+            });
+        });
+
+        onValue(ref(db, 'vrijgave/' + myName), (snap) => {
+            if(snap.val()) document.getElementById('foto-container').classList.remove('unit-view-locked');
+        });
+
+        onValue(ref(db, 'sporen'), (snap) => {
+            const data = snap.val() || {};
+            document.querySelectorAll('.spoor-item').forEach(e => e.remove());
+            Object.keys(data).forEach(id => {
+                const pos = data[id];
+                const sDef = sporenDef.find(x => x.id === id);
+                if(pos && sDef) {
+                    const div = document.createElement('div'); div.className = 'spoor-item';
+                    div.style.left = pos.x + '%'; div.style.top = pos.y + '%';
+                    div.innerHTML = `<img src="${sDef.img}" style="width:${pos.s}px; transform:rotate(${pos.r}deg); pointer-events:none;"><div class="spoor-label uppercase font-black">${sDef.name}</div>`;
+                    document.getElementById('canvas').appendChild(div);
+                    if(myRole === 'OC') setupInteractie(div, id, pos.r, pos.s);
+                }
+            });
+        });
+    }
+
+    function setupInteractie(div, id, r, s) {
+        div.onmousedown = (e) => {
+            if(e.button !== 0) return;
+            const move = (ev) => {
+                const rect = document.getElementById('foto-container').getBoundingClientRect();
+                update(ref(db, 'sporen/' + id), { x: ((ev.clientX - rect.left) / rect.width) * 100, y: ((ev.clientY - rect.top) / rect.height) * 100 });
+            };
+            document.addEventListener('mousemove', move);
+            document.onmouseup = () => document.removeEventListener('mousemove', move);
+        };
+        div.oncontextmenu = (e) => { e.preventDefault(); update(ref(db, 'sporen/' + id), { r: (r + 45) % 360 }); };
+        div.onwheel = (e) => {
+            e.preventDefault();
+            const newS = Math.max(10, Math.min(600, s + (e.deltaY > 0 ? -10 : 10)));
+            update(ref(db, 'sporen/' + id), { s: newS });
+        };
+    }
+
+    window.resetSim = () => { if(confirm("Volledige reset?")) { remove(ref(db, 'sporen')); remove(ref(db, 'feed')); remove(ref(db, 'vrijgave')); location.reload(); }};
+</script>
+</body>
+</html>
