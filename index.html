@@ -14,7 +14,6 @@
         #foto-container { position: relative; background-size: cover; background-position: center; flex-grow: 1; background-color: #222; }
         #canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
         
-        /* Sporen zonder plaatjes, alleen tekst-labels */
         .spoor-item { 
             position: absolute; 
             transform: translate(-50%, -50%); 
@@ -41,6 +40,9 @@
     <div id="page-login" class="fixed inset-0 bg-[#001a33] z-50 flex items-center justify-center p-4">
         <div class="bg-white p-8 rounded shadow-2xl w-full max-w-xl border-t-8 border-blue-900">
             <h1 class="text-2xl font-black text-blue-900 mb-4 uppercase italic">Casus 5: Decor-oefening</h1>
+            <div class="bg-yellow-50 border-l-4 border-yellow-500 p-3 mb-4 text-xs italic">
+                <strong>Locatie:</strong> Petstraat, Amsterdam.
+            </div>
             <input type="text" id="userName" placeholder="Naam / Roepnummer" class="w-full p-4 border border-gray-300 mb-4 outline-none focus:border-blue-900 text-lg">
             <div class="flex gap-4">
                 <button onclick="startApp('UNIT')" class="btn-main">Start Eenheid</button>
@@ -56,7 +58,7 @@
 
         <div class="bg-white border-l border-gray-300 flex flex-col h-full overflow-hidden">
             <div id="oc-panel" class="hidden p-4 bg-gray-100 border-b-2 border-gray-300 text-[10px]">
-                <strong class="text-blue-900 uppercase">Regie Dashboard</strong>
+                <strong class="text-blue-900 uppercase">Regie Dashboard | Petstraat</strong>
                 <div class="flex gap-4 my-2">
                     <label><input type="checkbox" class="oc-chk" data-label="Teg. Tijd"> Kaal: Tegenwoordig</label>
                     <label><input type="checkbox" class="oc-chk" data-label="Verl. Tijd"> Veranderlijk: Verleden</label>
@@ -111,8 +113,8 @@
             const div = document.getElementById('sporen-beheer');
             sporenDef.forEach(s => {
                 const b = document.createElement('button');
-                b.innerText = s.name.replace('SPOOR: ', '');
-                b.className = 'bg-white border border-gray-400 p-1 font-bold hover:bg-gray-200';
+                b.innerText = s.name.replace('SPOOR: ', '').replace('OBJECT: ', '');
+                b.className = 'bg-white border border-gray-400 p-1 font-bold hover:bg-gray-200 uppercase';
                 b.onclick = () => set(ref(db, 'sporen/' + s.id), { x: 50, y: 50, r: 0 });
                 div.appendChild(b);
             });
@@ -145,7 +147,7 @@
                         const bBox = document.createElement('div'); bBox.className = "flex gap-2 mt-2";
                         bBox.innerHTML = `
                             <button onclick="stuurFeedback('${m.sender}')" class="bg-yellow-500 text-black text-[9px] px-2 py-1 font-bold rounded">CHECK</button>
-                            <button onclick="set(ref(db, 'vrijgave/${m.sender}'), true)" class="bg-green-600 text-white text-[9px] px-2 py-1 font-bold rounded">VRIJGEVEN</button>`;
+                            <button onclick="set(ref(db, 'vrijgave/${m.sender}'), true)" class="bg-green-600 text-white text-[9px] px-2 py-1 font-bold rounded uppercase">Vrijgeven</button>`;
                         div.appendChild(bBox);
                     }
                     feed.prepend(div);
@@ -188,7 +190,7 @@
         div.oncontextmenu = (e) => { e.preventDefault(); update(ref(db, 'sporen/' + id), { r: (r + 45) % 360 }); };
     }
 
-    window.resetSim = () => { if(confirm("Volledige reset?")) { remove(ref(db, 'sporen')); remove(ref(db, 'feed')); remove(ref(db, 'vrijgave')); location.reload(); }};
+    window.resetSim = () => { if(confirm("Volledige reset van alle data?")) { remove(ref(db, 'sporen')); remove(ref(db, 'feed')); remove(ref(db, 'vrijgave')); location.reload(); }};
 </script>
 </body>
 </html>
