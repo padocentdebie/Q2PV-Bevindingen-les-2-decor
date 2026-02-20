@@ -26,34 +26,27 @@
         <div class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-lg border-t-8 border-blue-900 text-center">
             <h1 class="text-3xl font-black text-blue-900 mb-2 italic">CASUS 5</h1>
             <p class="text-sm font-bold uppercase tracking-widest text-slate-500 mb-8">Dapperstraat, Amsterdam</p>
-            <input type="text" id="userName" placeholder="Naam / Roepnummer" class="w-full p-4 border-2 border-slate-200 rounded-lg mb-4 outline-none focus:border-blue-900 text-center text-xl font-bold">
+            <input type="text" id="userName" placeholder="Roepnummer / Naam" class="w-full p-4 border-2 border-slate-200 rounded-lg mb-6 outline-none focus:border-blue-900 text-center text-xl font-bold">
             
-            <div id="location-select" class="mb-6">
-                <p class="text-[10px] font-black uppercase mb-2">Kies uw startpositie:</p>
-                <div class="flex gap-2 justify-center">
-                    <button onclick="setLoc('ETOS')" id="btn-etos" class="px-4 py-2 border-2 border-slate-200 rounded font-bold text-sm hover:bg-slate-50">Ter hoogte van Etos</button>
-                    <button onclick="setLoc('MCD')" id="btn-mcd" class="px-4 py-2 border-2 border-slate-200 rounded font-bold text-sm hover:bg-slate-50">Ter hoogte van McDonalds</button>
-                </div>
-            </div>
-
             <div class="grid grid-cols-2 gap-4">
                 <button onclick="startApp('UNIT')" class="btn-main shadow-lg">Start Eenheid</button>
                 <button onclick="startApp('OC')" class="btn-main !bg-slate-700 shadow-lg">Start OC (Regie)</button>
             </div>
+            <p class="mt-4 text-[10px] text-slate-400 uppercase italic">Locatie wordt automatisch toegewezen bij start.</p>
         </div>
     </div>
 
     <div id="page-sim" class="hidden grid grid-cols-1 lg:grid-cols-[1fr_420px] h-screen">
         <div id="foto-container" class="unit-view-locked">
             <div id="canvas"></div>
-            <div id="status-label" class="absolute top-4 left-4 bg-black/70 text-white text-[10px] px-3 py-1.5 uppercase tracking-tighter font-black rounded border border-white/20">Fase: Kaal Decor</div>
+            <div id="status-label" class="absolute top-4 left-4 bg-black/70 text-white text-[10px] px-3 py-1.5 uppercase tracking-tighter font-black rounded border border-white/20">Initialiseren...</div>
         </div>
 
         <div class="bg-white border-l border-slate-200 flex flex-col h-full overflow-hidden shadow-2xl">
             <div id="oc-panel" class="hidden p-4 bg-slate-100 border-b border-slate-300">
                 <div class="flex justify-between items-center mb-3 text-[10px] font-black uppercase text-slate-500">
                     <span>Regie Dashboard</span>
-                    <button onclick="resetSim()" class="text-red-600 hover:underline">Reset Alles</button>
+                    <button onclick="resetSim()" class="text-red-600 hover:underline">Reset Data</button>
                 </div>
                 <div id="sporen-beheer" class="grid grid-cols-2 gap-1.5"></div>
             </div>
@@ -61,7 +54,7 @@
             <div id="livefeed" class="flex-grow p-4 overflow-y-auto bg-slate-50 space-y-3 flex flex-col-reverse"></div>
 
             <div class="p-4 border-t border-slate-200 bg-white">
-                <textarea id="msgInput" rows="3" class="w-full p-3 border-2 border-slate-100 rounded-lg text-sm outline-none mb-2 focus:border-blue-900" placeholder="Beschrijf conform protocol..."></textarea>
+                <textarea id="msgInput" rows="3" class="w-full p-3 border-2 border-slate-100 rounded-lg text-sm outline-none mb-2 focus:border-blue-900 transition-colors" placeholder="Beschrijf de vaste omgeving (Kaal Decor) conform protocol..."></textarea>
                 <button onclick="verstuurMelding()" class="btn-main">Verstuur naar Feed</button>
             </div>
         </div>
@@ -80,28 +73,29 @@
     
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
-    let myName, myRole, myLoc = 'ETOS';
+    let myName, myRole, myLoc;
 
     const photos = { 'ETOS': 'casus5positiedapperstraat.png', 'MCD': 'casus5positiedapperstraathoogtemcdonalds.png' };
     const sporenDef = [ {id:'rem', name:'SPOOR: REMSLEEP'}, {id:'bloed', name:'SPOOR: BLOED'}, {id:'glas', name:'SPOOR: GLASFRAGMENTEN'}, {id:'auto', name:'OBJECT: VW GOLF (ZW)'} ];
 
-    window.setLoc = (l) => {
-        myLoc = l;
-        document.querySelectorAll('#location-select button').forEach(b => b.classList.remove('bg-blue-900', 'text-white', 'border-blue-900'));
-        document.getElementById('btn-' + l.toLowerCase()).classList.add('bg-blue-900', 'text-white', 'border-blue-900');
-    };
-
     window.startApp = (role) => {
         const n = document.getElementById('userName').value.trim();
-        if(!n) return alert("Voer naam in.");
+        if(!n) return alert("Voer naam/roepnummer in.");
         myName = n; myRole = role;
+
+        // Random locatie toewijzen als het een Eenheid is
+        myLoc = (Math.random() > 0.5) ? 'ETOS' : 'MCD';
+        
         document.getElementById('page-login').classList.add('hidden');
         document.getElementById('page-sim').classList.remove('hidden');
-        document.getElementById('foto-container').style.backgroundImage = `url('${photos[myLoc]}')`;
-
-        if(role === 'OC') {
+        
+        if(role === 'UNIT') {
+            document.getElementById('foto-container').style.backgroundImage = `url('${photos[myLoc]}')`;
+            document.getElementById('status-label').innerText = `Locatie: Ter hoogte van ${myLoc === 'ETOS' ? 'Etos' : 'McDonalds'} (Kaal Decor)`;
+        } else {
             document.getElementById('oc-panel').classList.remove('hidden');
             document.getElementById('foto-container').classList.replace('unit-view-locked', 'unit-view-active');
+            document.getElementById('status-label').innerText = "Regie Modus: Live Overzicht";
             const div = document.getElementById('sporen-beheer');
             sporenDef.forEach(s => {
                 const b = document.createElement('button');
@@ -128,11 +122,13 @@
                 if(myRole === 'OC' || m.sender === myName || m.target === myName) {
                     const div = document.createElement('div');
                     div.className = m.role === 'UNIT' ? 'melding-unit' : 'melding-fb';
-                    const locTag = m.loc ? `<span class="text-blue-500 ml-2">[LOCATIE: ${m.loc}]</span>` : '';
+                    const locTag = m.loc ? `<span class="text-blue-600 bg-blue-50 px-1 ml-2 border border-blue-200">[${m.loc}]</span>` : '';
                     div.innerHTML = `<div class="text-[9px] font-black text-blue-900 mb-1 uppercase">${m.sender} ${locTag}</div>${m.msg}`;
                     if(myRole === 'OC' && m.role === 'UNIT') {
                         const bBox = document.createElement('div'); bBox.className = "flex gap-2 mt-2 pt-2 border-t border-slate-100";
-                        bBox.innerHTML = `<button onclick="push(ref(db, 'feed'), {sender:'OC', target:'${m.sender}', msg:'CHECK OK', role:'FB'})" class="btn-oc-action">CHECK</button><button onclick="set(ref(db, 'vrijgave/${m.sender}'), true)" class="btn-oc-action bg-green-600 text-white uppercase">Vrijgeven</button>`;
+                        bBox.innerHTML = `
+                            <button onclick="push(ref(db, 'feed'), {sender:'OC', target:'${m.sender}', msg:'CHECK OK', role:'FB'})" class="btn-oc-action">CHECK</button>
+                            <button onclick="set(ref(db, 'vrijgave/${m.sender}'), true)" class="btn-oc-action bg-green-600 text-white uppercase">Vrijgeven</button>`;
                         div.appendChild(bBox);
                     }
                     feed.appendChild(div);
@@ -144,7 +140,8 @@
             if(snap.val()) {
                 document.getElementById('foto-container').classList.replace('unit-view-locked', 'unit-view-active');
                 document.getElementById('status-label').innerText = "Status: Veranderlijk Decor (Vrijgegeven)";
-                document.getElementById('status-label').classList.add('!bg-green-700');
+                document.getElementById('status-label').className = "absolute top-4 left-4 bg-green-700 text-white text-[10px] px-3 py-1.5 uppercase tracking-tighter font-black rounded border border-white/20";
+                document.getElementById('msgInput').placeholder = "Beschrijf nu de sporen en veranderlijke zaken (Verleden tijd)...";
             }
         });
 
@@ -178,7 +175,6 @@
     }
 
     window.resetSim = () => { if(confirm("Data wissen?")) { remove(ref(db, 'sporen')); remove(ref(db, 'feed')); remove(ref(db, 'vrijgave')); location.reload(); }};
-    setLoc('ETOS'); // Default
 </script>
 </body>
 </html>
