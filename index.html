@@ -8,7 +8,8 @@
     <style>
         :root { --police-blue: #003366; --gold: #FFD700; }
         body { font-family: 'Segoe UI', sans-serif; height: 100vh; display: flex; flex-direction: column; overflow: hidden; background: #f4f7f9; }
-        .unit-view-locked { filter: grayscale(1) brightness(0.4) contrast(1.2); transition: all 1.5s ease; }
+        /* Helderheid aangepast van 0.4 naar 0.8 voor betere zichtbaarheid in vergrendelde stand */
+        .unit-view-locked { filter: grayscale(0.5) brightness(0.8) contrast(1.1); transition: all 1.5s ease; }
         .unit-view-active { filter: grayscale(0) brightness(1) contrast(1); transition: all 1.5s ease; }
         #foto-container { position: relative; background-size: cover; background-position: center; flex-grow: 1; background-color: #000; }
         #canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
@@ -83,7 +84,6 @@
         if(!n) return alert("Voer naam/roepnummer in.");
         myName = n; myRole = role;
 
-        // Random locatie toewijzen als het een Eenheid is
         myLoc = (Math.random() > 0.5) ? 'ETOS' : 'MCD';
         
         document.getElementById('page-login').classList.add('hidden');
