@@ -8,7 +8,6 @@
     <style>
         :root { --police-blue: #003366; --gold: #FFD700; }
         body { font-family: 'Segoe UI', sans-serif; height: 100vh; display: flex; flex-direction: column; overflow: hidden; background: #f4f7f9; }
-        /* Helderheid aangepast van 0.4 naar 0.8 voor betere zichtbaarheid in vergrendelde stand */
         .unit-view-locked { filter: grayscale(0.5) brightness(0.8) contrast(1.1); transition: all 1.5s ease; }
         .unit-view-active { filter: grayscale(0) brightness(1) contrast(1); transition: all 1.5s ease; }
         #foto-container { position: relative; background-size: cover; background-position: center; flex-grow: 1; background-color: #000; }
@@ -76,6 +75,9 @@
     const db = getDatabase(app);
     let myName, myRole, myLoc;
 
+    // Globale exports voor HTML onclick events
+    window.db = db; window.ref = ref; window.set = set; window.push = push; window.remove = remove;
+
     const photos = { 'ETOS': 'casus5positiedapperstraat.png', 'MCD': 'casus5positiedapperstraathoogtemcdonalds.png' };
     const sporenDef = [ {id:'rem', name:'SPOOR: REMSLEEP'}, {id:'bloed', name:'SPOOR: BLOED'}, {id:'glas', name:'SPOOR: GLASFRAGMENTEN'}, {id:'auto', name:'OBJECT: VW GOLF (ZW)'} ];
 
@@ -89,14 +91,17 @@
         document.getElementById('page-login').classList.add('hidden');
         document.getElementById('page-sim').classList.remove('hidden');
         
+        // Fix: OC moet ook een afbeelding zien om op te werken
+        document.getElementById('foto-container').style.backgroundImage = `url('${photos[myLoc]}')`;
+
         if(role === 'UNIT') {
-            document.getElementById('foto-container').style.backgroundImage = `url('${photos[myLoc]}')`;
             document.getElementById('status-label').innerText = `Locatie: Ter hoogte van ${myLoc === 'ETOS' ? 'Etos' : 'McDonalds'} (Kaal Decor)`;
         } else {
             document.getElementById('oc-panel').classList.remove('hidden');
             document.getElementById('foto-container').classList.replace('unit-view-locked', 'unit-view-active');
             document.getElementById('status-label').innerText = "Regie Modus: Live Overzicht";
             const div = document.getElementById('sporen-beheer');
+            div.innerHTML = ''; // Clear voor de zekerheid
             sporenDef.forEach(s => {
                 const b = document.createElement('button');
                 b.innerText = s.name.split(': ')[1]; b.className = 'bg-white border border-slate-300 p-2 text-[9px] font-black uppercase';
@@ -127,8 +132,8 @@
                     if(myRole === 'OC' && m.role === 'UNIT') {
                         const bBox = document.createElement('div'); bBox.className = "flex gap-2 mt-2 pt-2 border-t border-slate-100";
                         bBox.innerHTML = `
-                            <button onclick="push(ref(db, 'feed'), {sender:'OC', target:'${m.sender}', msg:'CHECK OK', role:'FB'})" class="btn-oc-action">CHECK</button>
-                            <button onclick="set(ref(db, 'vrijgave/${m.sender}'), true)" class="btn-oc-action bg-green-600 text-white uppercase">Vrijgeven</button>`;
+                            <button onclick="push(ref(window.db, 'feed'), {sender:'OC', target:'${m.sender}', msg:'CHECK OK', role:'FB'})" class="btn-oc-action">CHECK</button>
+                            <button onclick="set(ref(window.db, 'vrijgave/${m.sender}'), true)" class="btn-oc-action bg-green-600 text-white uppercase">Vrijgeven</button>`;
                         div.appendChild(bBox);
                     }
                     feed.appendChild(div);
